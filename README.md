@@ -317,3 +317,148 @@ Datum   Event-Name         Event-Data
     - Event-Upcasting
       - Adapter f(v1) => v2
       - Zur Laufzeit / im Event-Store (Event-Store aktualisieren)
+
+### Datenbank-Layout
+
+```
+TABLE Events
+  Timestamp   DATETIME
+  ObjectID    UUID
+  ObjectOrder BIGINT
+  Name        VARCHAR
+  Data        JSON / BLOB / TEXT
+  ...
+
+TABLE Snapshots
+  ObjectID    UUID
+  Revision    BIGINT
+  Data        JSON / BLOB / TEXT
+
+
+# Event speichern
+
+INSERT INTO Events (
+  Timestamp,
+  ObjectID,
+  ObjectOrder,
+  Name,
+  Data
+) VALUES (
+  202012141512,
+  'c76b276b-8a70-4de7-80b8-44800492bd0b',
+  1,
+  'Gehalt eingegangen',
+  { amount: 3000, currency: 'EUR' }
+)
+
+
+# Events auslesen für ein bestimmtes Objekt
+
+SELECT * FROM Snapshots WHERE ObjectID = ?
+=> snapshot (objectId, revision: 100, data: { balance: 3000, currency: 'EUR' })
+SELECT * FROM Events WHERE ObjectID = ? AND ObjectOrder > snapshot.revision ORDER BY ObjectOrder
+=> [ e1, e2, e3, ... ]
+
+snapshot + e1 + e2 + e3 + ... => Status Quo
+```
+
+## CQRS
+
+CQRS = CQS auf Anwendungsebene
+
+### CQS?
+
+- Design-Pattern, Bertrand Meyer ~2010
+- *C*ommand *Q*uery *S*eparation
+  - "Eine Frage zu stellen sollte die Antwort nicht verändern."
+
+```javascript
+const stack = new Stack();
+
+// Command (schreiben) = Verändert Zustand, gibt nichts zurück
+stack.push(23);
+
+// Query (lesen) = Gibt etwas zurück, verändert nicht den Zustand
+console.log(stack.isEmpty());
+
+// Query
+console.log(stack.top());
+
+// Command + Query: CQS verletzt!
+console.log(stack.pop());
+```
+
+### Auf Anwendungsebene
+
+CQRS = Command Query Responsibility Segregation
+
+```
+       API (Write) --- Database (Write, 5NF)
+     /                    |
+ Command                  |
+   /                      |
+UI                        | Synchronisation, CAP-Theorem => Eventual Consistency
+   \                      |
+  Query                   |
+     \                    v
+       API (Read) ---- Database (Read, 1NF)
+```
+
+- Normalformen
+  - 5 NF: Grandios zum Schreiben (Konsistenz, Integrität, …), katastrophal zum Lesen
+  - 1 NF: Grandios zum Lesen (SELECT * FROM Table), katastrophal zum Schreiben
+  - 3 NF: Schlecht für beides ;-)
+
+- CAP-Theorem
+  - Verteiltes System (Teilweiser Ausfall => Partition)
+  - Konsistenz: Alle Knoten liefern stets die gleiche Antwort => Preis: Verfügbarkeit nicht gegeben
+  - Verfügbarkeit: Alle Knoten können speichern => Preis: Sofortige Konsistenz ist nicht gegeben
+
+```
+    P - Partition Tolerance
+   / \
+  /   \
+ /     \
+C ----- A - Availability
+|
+Consistency
+```
+
+- Eventual Consistency
+  - Zeitlicher Versatz, Asynchronität
+  - Abwägen von geschäftlichem Risiko und Wahrscheinlichkeit
+
+## CQRS, Event-Sourcing und DDD
+
+```
+       +-> API (Command) ---> Aggregate(State)
+      +--> API (Command) ---> Aggregate(State) <-- Events <- Event-Store
+     /                             |                              ^
+  Commands                         v                              |
+   /                             Events --------------------------+
+UI <-------------------------------+
+   \                               v
+  Queries                       Projektion
+     \                             |
+      \                            v
+       +--> API (Query) ---> View-Database
+        +-> API (Query) ---> View-Database
+         +> API (Query) ---> View-Database
+```
+
+- API         HTTP      GraphQL
+  - Command   POST      Mutation
+  - Query     GET       Query
+  - Events    WS        Subscription
+
+### Beispiele
+
+- Facebook, Twitter, Amazon, …
+
+### Drill-Down API(Command)-Aggregate
+
+```
+           -> API(Command) ->       -> Worker
+-> Command -> API(Command) -> Queue -> Worker
+           -> API(Command) ->       -> Worker
+```
