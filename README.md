@@ -239,4 +239,81 @@ Commands => State => Domain-Events
 
 ## Event-Sourcing
 
-[…]
+- Mechanismus, um Daten zu speichern (Persistenzstrategie)
+
+- CRUD        SQL       REST      Bewertung
+  - Create    INSERT    POST      unkritisch
+  - Read      SELECT    GET       unkritisch
+  - Update    UPDATE    PUT       kritisch, da Daten zerstört werden
+  - Delete    DELETE    DELETE    kritisch, da Daten zerstört werden
+
+```
+login | secret   | isDisabled | lastUpdatedAt | aBSLastUpdatAt | prevSecret | prevSecret2 | value1 | value2 | value3 |
+------|----------|------------|---------------|----------------|------------|-------------|--------|--------|--------|
+jane  | password | false      | 202012141421  | 202012141421   | oldpass    | foobar      |        |        |        |
+```
+
+- Herausforderungen
+  - Verlieren Daten bei UPDATE und DELETE
+  - Keine historischen Daten
+  - Keine Information, wann was geändert wurde
+  - Eventuell wenig aussagekräftige Spaltennamen
+
+### Append-Only Log
+
+- INSERT + SELECT
+- Kein UPDATE oder DELETE
+
+```
+Datum   Event-Name         Event-Data
+----------------------------------------------
+01.12.  Konto eröffnet              0   |
+03.12.  Gehalt eingegangen      +3000   |
+04.12.  Miete abgebucht         -2000   |
+             -----------------> +1000 <------ Snapshot
+05.12.  Essen gegangen           -250   | Replay
+07.12.  Lotto gespielt            -10   |
+08.12.  Essen gegangen            -30   |
+             ----------------->  +710 <------ Snapshot
+11.12.  Lotto gewonnen             +5   v
+```
+
+=> Kontostand am 11.12. beträgt: 715
+
+- Datenbank, die so arbeitet, ist ein Event-Store
+- Event-Sourcing
+  - Nicht den Status-Quo speichern (den müsste man immer wieder mit UPDATE / DELETE verändern)
+  - Sondern die Deltas speichern, die zum Status Quo geführt haben
+
+- Vorteile
+  - Historische Daten
+  - Reporting
+  - Analyse
+  - Semantik
+  - Ad-hoc-Abfragen auf die Vergangenheit
+  - Alternative Realitäten
+- Nachteile
+  - Replay wird aufwändiger im Lauf der Zeit
+    - Aber: Snapshots können die Performance beliebig verbessern
+    - Performance wird dann ein deterministischer Sägezahn, keine linear steigende Gerade
+  - Speicherbedarf
+    - 1 TByte (Notebook) = 1.000.000.000.000 = 1 Billion
+    - Speicherplatz kostet nichts
+    - Daten vor (altem) Snapshot löschen / auslagern
+  - DSGVO anyone?
+    - a) Persönliche Daten verschlüsseln (?)
+    - b) Persönliche Daten auslagern, Eventstore nur Referenz ablegen
+    - c) Event-Store neu schreiben (Event-Store löschen)
+  - Events versionieren
+    - Event anpassen
+      - `Gehalt eingegangen`: Betrag (+ Währung)
+      - Unglücklich, insbesondere wenn sich die Semantik verändert
+    - Versionen durchnummerieren
+      - `Gehalt eingegangen`: Betrag
+      - `Gehalt eingegangen V2`: Betrag + Währung
+    - Fachliche Namen neu vergeben
+      - `Gehalt eingegangen`: Betrag
+      - `Gehalt eingegangen nach Währungsumstellung`: Betrag + Währung
+    - Event-Upcasting
+      - Adapter f(v1) => v2
+      - Zur Laufzeit / im Event-Store (Event-Store aktualisieren)
