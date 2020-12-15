@@ -36,6 +36,10 @@ class Event<TEventData> {
     this.data = data;
     this.metadata = metadata;
   }
+
+  public getFullName (): string {
+    return `${this.contextIdentifier.name}.${this.aggregateIdentifier.name}.${this.name}`;
+  }
 }
 
 export { Event };

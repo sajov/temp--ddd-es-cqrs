@@ -49,6 +49,23 @@ const getDrop = function ({ eventStore, eventPublisher }: {
 
     todo.replay({ events });
 
+    // const snapshot = snapshotStore.getSnapshot({ contextIdentifier, aggregateIdentifier });
+    // const events = snapshot ?
+    //   eventStore.getEvents({ contextIdentifier, aggregateIdentifier, from: snapshot.revision + 1 }) :
+    //   eventStore.getEvents({ contextIdentifier, aggregateIdentifier });
+    //
+    // todo.applySnapshot({ snapshot });
+    // todo.replay({ events });
+    //
+    // if (shallNewSnapshotBeTaken) {
+    //   snapshotStore.storeSnapshot({
+    //     contextIdentifier,
+    //     aggregateIdentifier,
+    //     snapshot: todo.getState(),
+    //     revision: todo.revision
+    //   });
+    // }
+
     try {
       todo.drop({ command: dropCommand });
     } catch (ex: unknown) {

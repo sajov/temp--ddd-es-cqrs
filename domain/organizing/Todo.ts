@@ -47,6 +47,10 @@ class Todo extends Aggregate {
       throw new Error(`Todo '${this.aggregateIdentifier.id}' was already dropped.`);
     }
 
+    if (command.data.description === this.description) {
+      throw new Error('New description must not be equal to old one.');
+    }
+
     this.publishEvent('edited', { description: command.data.description });
   }
 

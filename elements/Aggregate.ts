@@ -7,7 +7,7 @@ abstract class Aggregate {
 
   protected aggregateIdentifier: AggregateIdentifier;
 
-  private isExistent: boolean;
+  public revision: number;
 
   public unstoredEvents: Event<unknown>[];
 
@@ -17,7 +17,7 @@ abstract class Aggregate {
   }) {
     this.contextIdentifier = contextIdentifier;
     this.aggregateIdentifier = aggregateIdentifier;
-    this.isExistent = false;
+    this.revision = 0;
     this.unstoredEvents = [];
   }
 
@@ -26,12 +26,12 @@ abstract class Aggregate {
   }): void {
     for (const event of events) {
       (this as any)[event.name]({ event: event as Event<any> });
-      this.isExistent = true;
+      this.revision += 1;
     }
   }
 
   protected exists (): boolean {
-    return this.isExistent;
+    return this.revision > 0;
   }
 
   protected publishEvent<TEventData> (eventName: string, eventData: TEventData): void {
@@ -44,7 +44,7 @@ abstract class Aggregate {
     });
 
     (this as any)[event.name]({ event: event as Event<any> });
-
+    this.revision += 1;
     this.unstoredEvents.push(event);
   }
 }
