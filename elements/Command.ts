@@ -26,7 +26,7 @@ class Command {
     contextIdentifier: ContextIdentifier;
     aggregateIdentifier: AggregateIdentifier;
     name: string;
-    data: object;
+    data?: object;
     metadata: CommandMetadata;
   }) {
     this.contextIdentifier = contextIdentifier;
