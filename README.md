@@ -470,11 +470,3 @@ Um die Anwendung zu starten:
 ```shell
 $ npm run dev
 ```
-
-- Commands
-  - `todo`
-    - `note` (description)
-    - `edit` (id, description)
-    - `markAsDone` (id)
-    - `revertMarkAsDone` (id)
-    - `drop` (id)

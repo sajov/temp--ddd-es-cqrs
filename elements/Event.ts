@@ -1,9 +1,9 @@
 import { AggregateIdentifier } from './AggregateIdentifier';
-import { CommandMetadata } from './CommandMetadata';
 import { ContextIdentifier } from './ContextIdentifier';
+import { EventMetadata } from './EventMetadata';
 import { v4 as uuid } from 'uuid';
 
-class Command<TCommandData> {
+class Event<TEventData> {
   public readonly contextIdentifier: ContextIdentifier;
 
   public readonly aggregateIdentifier: AggregateIdentifier;
@@ -12,9 +12,9 @@ class Command<TCommandData> {
 
   public readonly id: string;
 
-  public readonly data: TCommandData;
+  public readonly data: TEventData;
 
-  public readonly metadata: CommandMetadata;
+  public readonly metadata: EventMetadata;
 
   public constructor ({
     contextIdentifier,
@@ -26,8 +26,8 @@ class Command<TCommandData> {
     contextIdentifier: ContextIdentifier;
     aggregateIdentifier: AggregateIdentifier;
     name: string;
-    data: TCommandData;
-    metadata: CommandMetadata;
+    data: TEventData;
+    metadata: EventMetadata;
   }) {
     this.contextIdentifier = contextIdentifier;
     this.aggregateIdentifier = aggregateIdentifier;
@@ -38,4 +38,4 @@ class Command<TCommandData> {
   }
 }
 
-export { Command };
+export { Event };

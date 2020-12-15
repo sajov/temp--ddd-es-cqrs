@@ -1,6 +1,8 @@
 import { Command } from '../../elements/Command';
+import { EventStore } from '../../stores/EventStore';
 import { flaschenpost } from 'flaschenpost';
 import { RequestHandler } from 'express';
+import { Todo } from '../../domain/organizing/Todo';
 import { v4 as uuid } from 'uuid';
 import { Value } from 'validate-value';
 
@@ -15,7 +17,9 @@ const requestBodySchema = new Value({
   additionalProperties: false
 });
 
-const getNote = function (): RequestHandler {
+const getNote = function ({ eventStore }: {
+  eventStore: EventStore;
+}): RequestHandler {
   return (req, res): void => {
     if (!requestBodySchema.isValid(req.body)) {
       return res.status(400).end();
@@ -25,15 +29,24 @@ const getNote = function (): RequestHandler {
 
     const { description } = req.body;
 
+    const contextIdentifier = { name: 'organizing' };
+    const aggregateIdentifier = { name: 'todo', id: uuid() };
+
     const noteCommand = new Command({
-      contextIdentifier: { name: 'organizing' },
-      aggregateIdentifier: { name: 'todo', id: uuid() },
+      contextIdentifier,
+      aggregateIdentifier,
       name: 'note',
       data: { description },
       metadata: { timestamp: Date.now() }
     });
 
     logger.info('Command received.', { command: noteCommand });
+
+    const todo = new Todo({ contextIdentifier, aggregateIdentifier });
+    const events = eventStore.getEvents({ contextIdentifier, aggregateIdentifier });
+
+    todo.replay({ events });
+    todo.note({ command: noteCommand });
   };
 };
 
