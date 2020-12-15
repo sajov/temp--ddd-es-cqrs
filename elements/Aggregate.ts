@@ -2,12 +2,14 @@ import { AggregateIdentifier } from './AggregateIdentifier';
 import { ContextIdentifier } from './ContextIdentifier';
 import { Event } from './Event';
 
-class Aggregate {
+abstract class Aggregate {
   protected contextIdentifier: ContextIdentifier;
 
   protected aggregateIdentifier: AggregateIdentifier;
 
   private isExistent: boolean;
+
+  public unstoredEvents: Event<unknown>[];
 
   public constructor ({ contextIdentifier, aggregateIdentifier }: {
     contextIdentifier: ContextIdentifier;
@@ -16,6 +18,7 @@ class Aggregate {
     this.contextIdentifier = contextIdentifier;
     this.aggregateIdentifier = aggregateIdentifier;
     this.isExistent = false;
+    this.unstoredEvents = [];
   }
 
   public replay ({ events }: {
@@ -40,7 +43,9 @@ class Aggregate {
       metadata: { timestamp: Date.now() }
     });
 
-    // ...
+    (this as any)[event.name]({ event: event as Event<any> });
+
+    this.unstoredEvents.push(event);
   }
 }
 

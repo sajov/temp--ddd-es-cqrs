@@ -1,4 +1,6 @@
 import { Command } from '../../elements/Command';
+import { Event } from '../../elements/Event';
+import { EventPublisher } from '../../publishers/EventPublisher';
 import { EventStore } from '../../stores/EventStore';
 import { flaschenpost } from 'flaschenpost';
 import { RequestHandler } from 'express';
@@ -17,8 +19,9 @@ const requestBodySchema = new Value({
   additionalProperties: false
 });
 
-const getNote = function ({ eventStore }: {
+const getNote = function ({ eventStore, eventPublisher }: {
   eventStore: EventStore;
+  eventPublisher: EventPublisher;
 }): RequestHandler {
   return (req, res): void => {
     if (!requestBodySchema.isValid(req.body)) {
@@ -46,7 +49,31 @@ const getNote = function ({ eventStore }: {
     const events = eventStore.getEvents({ contextIdentifier, aggregateIdentifier });
 
     todo.replay({ events });
-    todo.note({ command: noteCommand });
+
+    try {
+      todo.note({ command: noteCommand });
+    } catch (ex: unknown) {
+      logger.error('Failed to note todo.', { command: noteCommand, ex });
+
+      eventPublisher.publish({
+        event: new Event({
+          contextIdentifier,
+          aggregateIdentifier,
+          name: 'noteFailed',
+          data: { reason: (ex as Error).message },
+          metadata: { timestamp: Date.now() }
+        })
+      });
+
+      return;
+    }
+
+    logger.info('Todo noted.', { command: noteCommand });
+
+    for (const unstoredEvent of todo.unstoredEvents) {
+      eventStore.storeEvent({ event: unstoredEvent });
+      eventPublisher.publish({ event: unstoredEvent });
+    }
   };
 };
 
