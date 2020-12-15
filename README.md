@@ -470,3 +470,21 @@ Um die Anwendung zu starten:
 ```shell
 $ npm run dev
 ```
+
+Command senden:
+
+```shell
+$ curl -i -X POST -H 'content-type:application/json' -d '{"...":"..."}' http://localhost:3000/command/<context>/<aggregate>
+```
+
+Events abonnieren:
+
+```shell
+$ curl -i http://localhost:3000/events
+```
+
+Query ausführen:
+
+```shell
+$ curl -i http://localhost:3000/query/<query-name>
+```
