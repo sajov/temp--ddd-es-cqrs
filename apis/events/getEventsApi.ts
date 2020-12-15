@@ -1,9 +1,13 @@
+import { EventPublisher } from '../../publishers/EventPublisher';
+import { getEvents } from './getEvents';
 import express, { Application } from 'express';
 
-const getEventsApi = function (): Application {
+const getEventsApi = function ({ eventPublisher }: {
+  eventPublisher: EventPublisher;
+}): Application {
   const eventsApi = express();
 
-  // TODO: Implement events API.
+  eventsApi.get('/', getEvents({ eventPublisher }));
 
   return eventsApi;
 };

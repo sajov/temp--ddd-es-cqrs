@@ -1,9 +1,13 @@
+import { getAllTodos } from './getAllTodos';
+import { ViewStore } from '../../stores/ViewStore';
 import express, { Application } from 'express';
 
-const getQueryApi = function (): Application {
+const getQueryApi = function ({ viewStore }: {
+  viewStore: ViewStore;
+}): Application {
   const queryApi = express();
 
-  // TODO: Implement query API.
+  queryApi.get('/all-todos', getAllTodos({ viewStore }));
 
   return queryApi;
 };
