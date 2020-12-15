@@ -436,7 +436,7 @@ Consistency
      /                             |                              ^
   Commands                         v                              |
    /                             Events --------------------------+
-UI <-------------------------------+
+UI <------ API (Events) -----------+
    \                               v
   Queries                       Projektion
      \                             |
@@ -462,3 +462,19 @@ UI <-------------------------------+
 -> Command -> API(Command) -> Queue -> Worker
            -> API(Command) ->       -> Worker
 ```
+
+## Code
+
+Um die Anwendung zu starten:
+
+```shell
+$ npm run dev
+```
+
+- Commands
+  - `todo`
+    - `note` (description)
+    - `edit` (id, description)
+    - `markAsDone` (id)
+    - `revertMarkAsDone` (id)
+    - `drop` (id)
